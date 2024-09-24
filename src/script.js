@@ -22,11 +22,24 @@ const parameters = {
   size: 0.02,
 };
 
+let geometry = null;
+let material = null;
+let points = null;
+
 const createGalaxy = () => {
+  /**
+   * Destroy old Galaxy
+   */
+  if (points !== null) {
+    // metodo "dispose" cancella la mermoria da quel variabile che abbiamo concatenato
+    geometry.dispose();
+    material.dispose();
+    scene.remove(points);
+  }
   /**
    * Geometry
    */
-  const geometry = new THREE.BufferGeometry();
+  geometry = new THREE.BufferGeometry();
 
   const positions = new Float32Array(parameters.count * 3);
 
@@ -42,7 +55,7 @@ const createGalaxy = () => {
   /**
    * Material
    */
-  const material = new THREE.PointsMaterial({
+  material = new THREE.PointsMaterial({
     size: parameters.size,
     sizeAttenuation: true,
     blending: THREE.AdditiveBlending,
@@ -52,10 +65,26 @@ const createGalaxy = () => {
   /**
    * Points
    */
-  const points = new THREE.Points(geometry, material);
+  points = new THREE.Points(geometry, material);
   scene.add(points);
 };
 createGalaxy();
+
+/**
+ * Gui Tweaks
+ */
+gui
+  .add(parameters, "count")
+  .min(100)
+  .max(1000000)
+  .step(100)
+  .onFinishChange(createGalaxy);
+gui
+  .add(parameters, "size")
+  .min(0.001)
+  .max(0.1)
+  .step(0.001)
+  .onFinishChange(createGalaxy);
 
 /**********************************************
  * Sizes
