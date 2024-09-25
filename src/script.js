@@ -20,6 +20,10 @@ const scene = new THREE.Scene();
 const parameters = {
   count: 1000,
   size: 0.02,
+  radius: 5, //lunghezzadel radio del cerchio di galaxy
+  branches: 3,
+  spin: 0.1,
+  randomness: 0.2,
 };
 
 let geometry = null;
@@ -44,11 +48,30 @@ const createGalaxy = () => {
   const positions = new Float32Array(parameters.count * 3);
 
   for (let i = 0; i < parameters.count; i++) {
+    // mtodo i3 per creare dei var in base a 3 valori qui per vector 3
     const i3 = i * 3;
 
-    positions[i] = (Math.random() - 0.5) * 10;
-    positions[i + 1] = (Math.random() - 0.5) * 10;
-    positions[i + 2] = (Math.random() - 0.5) * 10;
+    //randomize particles sul raggio di parameters.radius
+    const radius = Math.random() * parameters.radius;
+    //calc angolo di ogni slice in base del valore parameters.branches
+    const branchesAngle =
+      //il modulo ci da indice tra 0 e il valore parameters.branches
+      //dividendo l'indice modulato al parameters.branches avremmo un valore tra 0-1
+      ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+
+    //multiplicare il valore spin al radius = aumenta il valore di radius spin% quindi cresce esponenzialmente da 0 al max del raggio
+    const spinAngle = parameters.spin * radius;
+
+    const randomX = (Math.random() - 0.5) * parameters.randomness * radius;
+    const randomY = (Math.random() - 0.5) * parameters.randomness * radius;
+    const randomZ = (Math.random() - 0.5) * parameters.randomness * radius;
+
+    //position([i3], i3 + 1, [i3 + 2])  Math.cos & sin per renderizzare i raggi dentro un cerchio
+    //+spinAgnle crea una forma curva
+    //i valori randoX,Y,Z randomizza i particles lungo la curva
+    positions[i3] = Math.cos(branchesAngle + spinAngle) * radius + randomX;
+    positions[i3 + 1] = randomY;
+    positions[i3 + 2] = Math.sin(branchesAngle + spinAngle) * radius + randomZ;
   }
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
@@ -66,6 +89,7 @@ const createGalaxy = () => {
    * Points
    */
   points = new THREE.Points(geometry, material);
+
   scene.add(points);
 };
 createGalaxy();
@@ -83,6 +107,30 @@ gui
   .add(parameters, "size")
   .min(0.001)
   .max(0.1)
+  .step(0.001)
+  .onFinishChange(createGalaxy);
+gui
+  .add(parameters, "radius")
+  .min(0.2)
+  .max(8)
+  .step(0.2)
+  .onFinishChange(createGalaxy);
+gui
+  .add(parameters, "branches")
+  .min(1)
+  .max(10)
+  .step(1)
+  .onFinishChange(createGalaxy);
+gui
+  .add(parameters, "spin")
+  .min(-5)
+  .max(5)
+  .step(0.1)
+  .onFinishChange(createGalaxy);
+gui
+  .add(parameters, "randomness")
+  .min(0)
+  .max(2)
   .step(0.001)
   .onFinishChange(createGalaxy);
 
