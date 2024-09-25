@@ -18,12 +18,15 @@ const scene = new THREE.Scene();
  * Galaxy
  */
 const parameters = {
-  count: 1000,
+  count: 10000,
   size: 0.02,
   radius: 5, //lunghezzadel radio del cerchio di galaxy
   branches: 3,
-  spin: 0.1,
+  spin: 1,
   randomness: 0.2,
+  randomnessPower: 3,
+  insideColor: 0xff6030,
+  outsideColor: 0x1623df,
 };
 
 let geometry = null;
@@ -46,6 +49,7 @@ const createGalaxy = () => {
   geometry = new THREE.BufferGeometry();
 
   const positions = new Float32Array(parameters.count * 3);
+  const colors = new Float32Array(parameters.count * 3);
 
   for (let i = 0; i < parameters.count; i++) {
     // mtodo i3 per creare dei var in base a 3 valori qui per vector 3
@@ -62,18 +66,47 @@ const createGalaxy = () => {
     //multiplicare il valore spin al radius = aumenta il valore di radius spin% quindi cresce esponenzialmente da 0 al max del raggio
     const spinAngle = parameters.spin * radius;
 
-    const randomX = (Math.random() - 0.5) * parameters.randomness * radius;
-    const randomY = (Math.random() - 0.5) * parameters.randomness * radius;
-    const randomZ = (Math.random() - 0.5) * parameters.randomness * radius;
+    //Inside & ouside Colors
+    const colorInside = new THREE.Color(parameters.insideColor);
+    const colorOutside = new THREE.Color(parameters.outsideColor);
+
+    //il colore terzo che viene mischiato con altri due (lerp(...))
+    const mixedColor = colorInside.clone();
+    mixedColor.lerp(colorOutside, radius / parameters.radius);
+
+    //usare Power fa che con l'aumento del power i particles più vicini all'radius siano piu vicini tra di loro, e quindi crea luminisità al centro
+    const randomX =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
+
+    const randomY =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
+    const randomZ =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
 
     //position([i3], i3 + 1, [i3 + 2])  Math.cos & sin per renderizzare i raggi dentro un cerchio
     //+spinAgnle crea una forma curva
     //i valori randoX,Y,Z randomizza i particles lungo la curva
     positions[i3] = Math.cos(branchesAngle + spinAngle) * radius + randomX;
-    positions[i3 + 1] = randomY;
+    positions[i3 + 1] = Math.sin(branchesAngle + spinAngle) * radius + randomY;
     positions[i3 + 2] = Math.sin(branchesAngle + spinAngle) * radius + randomZ;
+
+    //colors
+    colors[i3] = mixedColor.r;
+    colors[i3 + 1] = mixedColor.g;
+    colors[i3 + 2] = mixedColor.b;
   }
+
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
   /**
    * Material
@@ -83,6 +116,7 @@ const createGalaxy = () => {
     sizeAttenuation: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
+    vertexColors: true,
   });
 
   /**
@@ -133,6 +167,14 @@ gui
   .max(2)
   .step(0.001)
   .onFinishChange(createGalaxy);
+gui
+  .add(parameters, "randomnessPower")
+  .min(1)
+  .max(10)
+  .step(0.001)
+  .onFinishChange(createGalaxy);
+gui.addColor(parameters, "insideColor").onFinishChange(createGalaxy);
+gui.addColor(parameters, "outsideColor").onFinishChange(createGalaxy);
 
 /**********************************************
  * Sizes
